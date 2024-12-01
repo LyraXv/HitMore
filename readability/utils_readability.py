@@ -6,7 +6,7 @@ into it's component syntactic parts.
 import nltk
 
 from nltk.tokenize import RegexpTokenizer
-from readability import syllables_en
+import syllables_en
 
 TOKENIZER = RegexpTokenizer('(?u)\W+|\$[\d\.]+|\S+')
 SPECIAL_CHARS = ['.', ',', '!', '?']
@@ -14,7 +14,11 @@ SPECIAL_CHARS = ['.', ',', '!', '?']
 def get_char_count(words):
     characters = 0
     for word in words:
-        characters += len(word.decode("utf-8"))
+        try:
+            characters += len(word.decode("utf-8"))
+        except UnicodeEncodeError:
+            print word
+            continue
     return characters
 
 def get_words(text=''):
@@ -52,22 +56,25 @@ def count_complex_words(text=''):
     cur_word = []
 
     for word in words:
-        cur_word.append(word)
-        if count_syllables(cur_word)>= 3:
+        try:
+            cur_word.append(word)
+            if count_syllables(cur_word)>= 3:
 
-            #Checking proper nouns. If a word starts with a capital letter
-            #and is NOT at the beginning of a sentence we don't add it
-            #as a complex word.
-            if not(word[0].isupper()):
-                complex_words += 1
-            else:
-                for sentence in sentences:
-                    if str(sentence).startswith(word):
-                        found = True
-                        break
-                if found:
+                #Checking proper nouns. If a word starts with a capital letter
+                #and is NOT at the beginning of a sentence we don't add it
+                #as a complex word.
+                if not(word[0].isupper()):
                     complex_words += 1
-                    found = False
-
-        cur_word.remove(word)
+                else:
+                    for sentence in sentences:
+                        if str(sentence).startswith(word):
+                            found = True
+                            break
+                    if found:
+                        complex_words += 1
+                        found = False
+            cur_word.remove(word)
+        except UnicodeEncodeError:
+            cur_word.remove(word)
+            continue
     return complex_words

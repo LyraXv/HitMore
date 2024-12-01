@@ -1,3 +1,4 @@
+# 最初的合并子串方式有误
 import math
 import pickle
 
@@ -23,14 +24,19 @@ def compute_union_with_all_fields(bugid, df1, df2, df3):
     return union_filenames.to_dict('records')
 
 def getBugFileLists(df_amalgam,df_bugLocator,df_blizzard):
+
     # get all bug ids
     all_bug_ids = set(df_amalgam['BugId']).union(set(df_bugLocator['BugId']), set(df_blizzard['BugId']))
+    # print(len(all_bug_ids))
+
     # calculate the file union
     results = []
     for bugid in all_bug_ids:
         union = compute_union_with_all_fields(bugid, df_amalgam, df_bugLocator, df_blizzard)
         results.extend(union)
     union_df = pd.DataFrame(results)
+    print(union_df[union_df['BugId']==2])
+    exit()
     return union_df
     # # data view
     # grouped = union_df.groupby('BugId')
@@ -139,6 +145,9 @@ def mergeBugFileInfo(filelists,dataset):
     # print(filelists) # union file lists
     for bugId,group in grouped:
         # load txt
+        if bugId ==2:
+            print(group)
+            exit()
         for index,row in group.iterrows():
             # print(f"Present Info{row.values}")
             bugRecInfo = {'BugId':bugId,'label':row['label'],'SourceFile':row['SourceFile']}
@@ -149,8 +158,8 @@ def mergeBugFileInfo(filelists,dataset):
             if check_for_nan(bugRecInfo):
                 exsit_nan_row += 1
             df_merge = pd.concat([df_merge,pd.DataFrame([bugRecInfo])],ignore_index=True)
-    df_merge = df_merge.dropna()
-    df_merge.to_csv("../data/get_info/"+dataset+'/recommendedList2.csv')
+    # df_merge = df_merge.dropna()
+    df_merge.to_csv("../data/get_info/"+dataset+'/recommendedList.csv')
     with open("../data/get_info/note_RecLists.txt", 'a') as f:
         f.write(f"Dataset:{dataset}  ExistNan Rows: {exsit_nan_row} Total Rows: {filelists.shape[0]} missRatio: {exsit_nan_row/filelists.shape[0]}\n")
 
@@ -164,7 +173,7 @@ if __name__ == "__main__":
     initial_path = "../data/get_info/"
     # dataset
     for dataset,file in configx.filepath_dict.items():
-        if dataset not in ['zookeeper']:
+        if dataset not in ['zookeeper','openjpa']:
             continue
         df_amalgam = getBugFileInfo(initial_path + dataset + "/" + configx.approach[0]+"List_top20.csv",configx.approach[0])
         df_bugLocator = getBugFileInfo(initial_path + dataset + "/" + configx.approach[1] + "List_top20.csv",configx.approach[1])

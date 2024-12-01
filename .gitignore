@@ -2,3 +2,4 @@
 *.npy
 /data/initial_recommendation_data/*
 /data/*
+/nltk/*

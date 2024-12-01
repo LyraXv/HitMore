@@ -60,3 +60,4 @@ if __name__ == "__main__":
             writer.writerow([file_path, all_content, code_content, comment_content])
 
     print(f"Results saved to {output_file}")
+

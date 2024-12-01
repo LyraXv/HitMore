@@ -1,4 +1,6 @@
 # read bugInfo,bugReport,Top20 fileLists for 3 approach
+import pandas as pd
+
 import utils.readBugInfo as info
 from configx.configx import ConfigX
 
@@ -9,15 +11,22 @@ if __name__ == '__main__':
 
     # read data(bug,bugReport,RecommendedList)
     for dataset,file in configx.filepath_dict.items():
-        print("=====Dataset:",dataset,"=====")
-        if dataset not in ['hibernate']:
-            continue
+        # setView
+        pd.set_option('display.expand_frame_repr', False)
 
-        # # bug
+        print("=====Dataset:",dataset,"=====")
+        # if dataset not in ['Tomcat']:
+        #     continue
+
+        # df = pd.read_csv('../data/get_info/'+dataset+'/bug_info.csv')
+
+        # # bug Info
         bug_df, bug_ids = info.readBugId(file['bugInfo'])
+
         # # sava bug_info
-        bug_df.to_csv('../data/get_info/'+dataset+'/bug_info.csv')
+        bug_df.to_csv('../data/get_info/'+dataset+'/bug_info.csv',encoding='utf-8')
         print("BugInfo:"+dataset+" is saved!")
+
         #
 
         # save bug_report_info

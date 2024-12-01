@@ -1,8 +1,8 @@
 from datetime import datetime
-import XMLToDictionary as XD
-import csv
-import pandas as pd
+from features import XMLToDictionary as XD
 import similarity as CS
+from configx.configx import ConfigX
+
 '''
 Function to return a list of previously filed bug reports that share a file with the current bug report
 @params given file name in a Bug Report, the BR's date, and the dictionary of all BRs
@@ -107,70 +107,53 @@ def getTop20Files(bugId, rightFiles, brSummary):
 
     return allFiles
 
+def getbugFeatures_four(dataset):
+    all_br = []
+    allBugReports = XD.CSVToDictionary(dataset)
+    for report in allBugReports:
+        bug_id = report["bug_id"]
+        date = convertToDateTime(report.get("report_time"))
+        rawCorpus = report["rawCorpus"]
+        files = report["files"]
+        summary = report["summary"]
 
-all_br = []
-allBugReports = XD.CSVToDictionary()
-for report in allBugReports:
+        print("===== " + report["bug_id"] + " =====")
 
-    bug_id = report["bug_id"]
-    date = convertToDateTime(report.get("report_time"))
-    rawCorpus = report["rawCorpus"]
-    files = report["files"]
-    summary = report["summary"]
-
-    print("===== " + report["bug_id"] + " =====")
-
-    for file in report["files"]:
-        # br = []
-        # src = javaFiles[file]
-
-        # rVSM Text Similarity
-        # rVSMTextSimilarity = CS.cosine_sim(report["rawCorpus"], src)
-
-        # Collaborative Filter Score
-        prevReports = getPreviousReportByFilename(file, date, allBugReports)
-        relatedCorpus = []
-        for preReport in prevReports:
-            # relatedCorpus.append(report["rawCorpus"])
-            relatedCorpus.append(preReport["summary"])
-        relatedString = ' '.join(relatedCorpus)
-        collaborativeFilterScore = CS.cosine_sim(rawCorpus, relatedString)
-        print(collaborativeFilterScore)
-
-        # Class Name Similarity
-        filename = file.split(".")
-        rawClassNames = filename[-2]
-        name_len = len(rawClassNames)
-        if rawClassNames in summary:
-            print(summary)
-            classNameSimilarity = name_len
-            print("class:", rawClassNames, classNameSimilarity)
-        else:
-            classNameSimilarity = 0
-
-        # Bug Fixing Recency
-        mrReport = getMostRecentReport(file, date, allBugReports)
-        # print("mrReport", mrReport.get("bug_id"), mrReport.get("report_time"), mrReport.get("files"))
-        bFRecency = bugFixingRecency(report, mrReport)
-        print(bFRecency)
-
-        # Bug Fixing Frequency
-        bFFrequency = bugFixingFrequency(file, date, allBugReports)
-        print(bFFrequency)
-
-        # br.append(bug_id)
-        # br.append(file)
-        # br.append(collaborativeFilterScore)
-        # br.append(classNameSimilarity)
-        # br.append(bFRecency)
-        # br.append(bFFrequency)
-        # all_br.append(br)
-
-        for wr in getTop20Files(bug_id, report["files"], summary):
+        # 根据TOP20去计算（可以先提整个数据集的特征，之后再考虑划分）
+        # 根据 bugid
+        for file in top20:
+            # 这里的file指的是filepath，注意我们的top20是有3条path,可以构成dict
             br = []
-            file = wr[0]
-            classNameSimilarity = wr[1]
-            # print(wr[0], wr[1])
+            # Collaboratice Filter Score
+            prevReports = getPreviousReportByFilename(file, date, allBugReports)
+            relatedCorpus = []
+            for preReport in prevReports:
+                relatedCorpus.append(preReport["summary"])
+            relatedString = ' '.join(relatedCorpus)
+            collaborativeFilterScore = CS.cosine_sim(rawCorpus, relatedString)
+            # print(collaborativeFilterScore)
+
+            # Class Name Similarity
+            # 注意不同Path的格式可能不同，0-2存在空
+            filename = file.split(".")
+            rawClassNames = filename[-2]
+            name_len = len(rawClassNames)
+            if rawClassNames in summary:
+                print(summary)
+                classNameSimilarity = name_len
+                print("class:", rawClassNames, classNameSimilarity)
+            else:
+                classNameSimilarity = 0
+
+            # Bug Fixing Recency
+            mrReport = getMostRecentReport(file, date, allBugReports)
+            # print("mrReport", mrReport.get("bug_id"), mrReport.get("report_time"), mrReport.get("files"))
+            bFRecency = bugFixingRecency(report, mrReport)
+            # print(bFRecency)
+
+            # Bug Fixing Frequency
+            bFFrequency = bugFixingFrequency(file, date, allBugReports)
+
             br.append(bug_id)
             br.append(file)
             br.append(collaborativeFilterScore)
@@ -178,10 +161,81 @@ for report in allBugReports:
             br.append(bFRecency)
             br.append(bFFrequency)
             all_br.append(br)
-print(all_br)
-features = pd.DataFrame(all_br, columns=["report_id", "file", "collab_filter", "classname_similarity", "bug_recency", "bug_frequency"])
-features.to_csv('data/zookeeper_dat/features_all.csv', index=False)
 
+
+
+'''
+        for file in report["files"]:
+            # br = []
+            # src = javaFiles[file]
+
+            # rVSM Text Similarity
+            # rVSMTextSimilarity = CS.cosine_sim(report["rawCorpus"], src)
+
+            # Collaborative Filter Score
+            prevReports = getPreviousReportByFilename(file, date, allBugReports)
+            relatedCorpus = []
+            for preReport in prevReports:
+                # relatedCorpus.append(report["rawCorpus"])
+                relatedCorpus.append(preReport["summary"])
+            relatedString = ' '.join(relatedCorpus)
+            collaborativeFilterScore = CS.cosine_sim(rawCorpus, relatedString)
+            # print(collaborativeFilterScore)
+
+            # Class Name Similarity
+            filename = file.split(".")
+            rawClassNames = filename[-2]
+            name_len = len(rawClassNames)
+            if rawClassNames in summary:
+                print(summary)
+                classNameSimilarity = name_len
+                print("class:", rawClassNames, classNameSimilarity)
+            else:
+                classNameSimilarity = 0
+
+            # Bug Fixing Recency
+            mrReport = getMostRecentReport(file, date, allBugReports)
+            # print("mrReport", mrReport.get("bug_id"), mrReport.get("report_time"), mrReport.get("files"))
+            bFRecency = bugFixingRecency(report, mrReport)
+            # print(bFRecency)
+
+            # Bug Fixing Frequency
+            bFFrequency = bugFixingFrequency(file, date, allBugReports)
+            # print(bFFrequency)
+
+            # br.append(bug_id)
+            # br.append(file)
+            # br.append(collaborativeFilterScore)
+            # br.append(classNameSimilarity)
+            # br.append(bFRecency)
+            # br.append(bFFrequency)
+            # all_br.append(br)
+
+            for wr in getTop20Files(bug_id, report["files"], summary):
+                br = []
+                file = wr[0]
+                classNameSimilarity = wr[1]
+                # print(wr[0], wr[1])
+                br.append(bug_id)
+                br.append(file)
+                br.append(collaborativeFilterScore)
+                br.append(classNameSimilarity)
+                br.append(bFRecency)
+                br.append(bFFrequency)
+                all_br.append(br)
+    print(all_br)
+    features = pd.DataFrame(all_br, columns=["report_id", "file", "collab_filter", "classname_similarity", "bug_recency", "bug_frequency"])
+    features.to_csv('data/zookeeper_dat/features_all.csv', index=False)
+'''
+
+
+
+if __name__ == '__main__':
+    configx = ConfigX()
+    for dataset,file in configx.filepath_dict.items():
+        if dataset not in ['zookeeper']:
+            continue
+        getbugFeatures_four(dataset)
 
 # for wr in getTop50WrongFiles(report["files"], report["rawCorpus"]):
 #     writer.writerow([report["id"], wr[0], wr[1], collaborativeFilterScore, wr[2], bugFixingRecency, bugFixingFrequency, 0])

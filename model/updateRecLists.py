@@ -2,6 +2,8 @@
 # update sourcefile
 # update Amalgam Rank
 
+# !!! 子串匹配，没有匹配到最精确的子串，导致一些数据缺失
+
 import math
 import os
 
@@ -12,6 +14,7 @@ from utils import utils
 
 def updateFilePath(df_git,sourcefile):
     matching_rows = df_git[df_git['class'].str.contains(sourcefile)]
+
     if matching_rows.empty:
         return None
     else:
@@ -178,7 +181,7 @@ if __name__ == '__main__':
         if index in (0,1):
             continue
         for dataset,file in configx.filepath_dict.items():
-            if dataset not in ('hibernate'):
+            if dataset not in ('zookeeper'):
                 continue
             # update "initial_recommendation_data" FileLists
             print(f">>>>>{configx.approach[index]} of {dataset} RecLists begin updating<<<<<")

@@ -1,4 +1,5 @@
 import os
+import re
 import xml.dom.minidom
 import pandas as pd
 
@@ -6,13 +7,19 @@ def readBugId(filepath):
     res_pred = []
     res = open(filepath,'r', encoding='utf-8')
     for line in res:
-        res_pred.append(list(line.strip('\n').split('邹')))
-    res.close()
+        bugInfo = line.split('邹')
+        if not bugInfo[0].isdigit():
+            continue
+        bugInfo[-1] = bugInfo[-1].replace('傻','\n').replace('\xa0','')
+        res_pred.append(bugInfo)
+        # if bugInfo[0] == '51340':
+        #     res_pred.append(bugInfo)
 
+    res.close()
     res_df = pd.DataFrame(res_pred, columns=['bugId', 'fixedCmit', 'cmitUnixTime', 'allFixedFiles', 'addFiles', 'addPackClass', 'delFiles',
                                              'delPackClass', 'modiFiles', 'modiPackClass', 'opendate', 'opendateUnixTime', 'fixdate',
                                              'fixdateUnixtTime', 'reporterName', 'reporterEmail', 'summary', 'description'])
-    # print(res_df)
+
     return res_df,res_df['bugId']
 
 # 预处理bug报告文本 分割成单词

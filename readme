@@ -1,0 +1,42 @@
+Step 01:
+    1 readMergedRecLists.py
+        label the data
+        get_info/{dataset}/mergedRecList.csv
+    2 EnsembleMethod.py
+        splited_amd_boosted_data/{dataset}
+
+
+Step 02: features + ML
+    1 Bug Report
+        mergeBRfeatures.py
+    2 Recommended Buggy File
+        readAbility:
+            readability/code_readability.py
+            getCfReadability.py
+        NDEV: NDEV.py
+        Comments-Codes Consisitency : code_and_comments_consistency.py
+        Bug-Fixing Recency/Bug-Fixing Frequency:
+            First use XMLToDictionary.py to get the fixed files list
+            features_collaborative.py
+        DAF/MAF: DAF_MAF.py
+        Developer’s Structural Scattering/Developer’s Semantic Scattering: strucatural_and_semantic_scattering
+        CodeComplexity/BugFixingDependencies: getCodeComplexity.py
+    3 Relation between them
+        Developers and Reporters: overlap.py
+        CollaborativeFilteringScore/Class Name Similarity: features_collaborative.py
+        Surface Lexical Similarity/Semantic Similarity: similarity.py
+        ApiEnrichedLexicalSimilarity: getAPIsim (from fold LR)
+        TopicSimilarity: topicSimilarity.py
+    4 Machine Learning
+        hitMore_cuml_rf.py # input:all features # output:trulybuggyfilesSets
+
+Step 03: Optimize buggy files Lits
+    you nead download Understand(),
+    1 Generate_butterfily.py
+    2 controlFlow_and_dataFlow.py
+    3 cooccurrence.py
+    4 merged_reranked_reclists.py
+    5 performance.py
+
+
+

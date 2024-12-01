@@ -1,3 +1,5 @@
+import re
+
 import pandas as pd
 from xml.etree import ElementTree as ET
 import csv
@@ -77,14 +79,16 @@ def CSVToDictionary(dataset):
     reader = csv.DictReader(open(f'../data/get_info/{dataset}/bug_report_fixedfiles.csv', 'rt', encoding='utf-8'), delimiter=',')
     dict_list = []
     for line in reader:
+        if not line['bug_id'].isdigit():
+            line['bug_id'] = re.sub(r'\D','',line['bug_id'])
         # Strip files string & split by .java (spaces in filenames). Discard empty strings & reappend .java to filenames
         line["files"] = [s.strip() + ".java" for s in line["files"].split(".java") if s]
 
-        line["rawCorpus"] = line["summary"] + line["description"]
+        line["rawCorpus"] = line["summary"] +". "+line["description"]
+        # print(line['rawCorpus'])
 
         # Change summary & description string into list of words
         # combinedCorpus = getCombinedCorpus(line)
-
         '''
         # Create a dictionary with a term frequency for each term
         d = dict.fromkeys(combinedCorpus, 0)
@@ -102,7 +106,7 @@ def CSVToDictionary(dataset):
 if __name__ == '__main__':
     configx = ConfigX()
     for dataset, file in configx.filepath_dict.items():
-        if dataset not in ['zookeeper']:
+        if dataset not in ['zookeeper']: #zookeeper
             continue
         # XMLToDictionary.py(contain fiexdFiles)
         print(f"=====Begin to save Bug Reports info:{dataset}=====")

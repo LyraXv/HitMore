@@ -1,11 +1,10 @@
-import math
 import re
 from datetime import datetime
-import XMLToDictionary as XD
-import csv
+from features import XMLToDictionary as XD
 import pandas as pd
 import similarity as CS
 from configx.configx import ConfigX
+from features.utils_features import readRecList, updateFeatures
 
 
 def checkFileName(filename,Fixedfiles): #dict str
@@ -109,92 +108,99 @@ def getFileName(filepath):
 
 
 def getbugFeatures_four(dataset,recList):
-    all_br = []
     allBugReports = XD.CSVToDictionary(dataset)
-
+    list_file = []
+    list_relation = []
     grouped = recList.groupby('bugId')
     for bugid,group in grouped:
-        print(bugid)
+        # print(bugid)
         [report] = list(filter(lambda x: x['bug_id'] == str(bugid), allBugReports))
         date = convertToDateTime(report.get("report_time"))
         rawCorpus = report["rawCorpus"]
-        files = report["files"]
+        # files = report["files"]
         summary = report["summary"]
-        print(type(group))
         for index,file in group.iterrows():
-            print(index)
+            res_file = []
+            res_relation = []
             filepath = {'path_0':file['path_0'],'path_1':file['path_1'],'path_2':file['path_2']}
-            br = []
             # Collaboratice Filter Score
-            print(filepath)
             prevReports = getPreviousReportByFilename(filepath, date, allBugReports)
-            # if not prevReports:
-            #     print("R")
-            #     continue
-            print(prevReports)
-            # exit()
+            # print(f"index:{index},bugid:{bugid},PrevReports:{prevReports}")
             relatedCorpus = []
             for preReport in prevReports:
                 relatedCorpus.append(preReport["summary"])
             relatedString = ' '.join(relatedCorpus)
-            collaborativeFilterScore = CS.cosine_sim(rawCorpus, relatedString)
-            print(collaborativeFilterScore)
+            # print(rawCorpus)
+            corpus = CS.preprocess(rawCorpus)
+            preString = CS.preprocess(relatedString)
+
+            str_corpus = " ".join(corpus)
+            srt_relatedStr = " ".join(preString)
+
+            # print(str_corpus)
+            # print(srt_relatedStr)
+
+            collaborativeFilterScore = CS.cosine_sim([str_corpus,srt_relatedStr])
 
             # Class Name Similarity
-            # 注意不同Path的格式可能不同，0-2存在空
             rawClassNames = getFileName(filepath)
-            print(f"rawNames{rawClassNames}")
+            # print(f"rawNames{rawClassNames}")
             name_len = len(rawClassNames)
             if rawClassNames in summary:
-                print(summary)
+                # print(summary)
                 classNameSimilarity = name_len
-                print("class:", rawClassNames, classNameSimilarity)
+                # print("class:", rawClassNames, classNameSimilarity)
             else:
                 classNameSimilarity = 0
-            print(f"classNameSimilarilty",classNameSimilarity)
+            # print(f"classNameSimilarilty",classNameSimilarity)
             # Bug Fixing Recency
             mrReport = getMostRecentReport(prevReports)
             # print("mrReport", mrReport.get("bug_id"), mrReport.get("report_time"), mrReport.get("files"))
             bFRecency = bugFixingRecency(report, mrReport)
-            print(bFRecency)
+            # print(bFRecency)
 
             # Bug Fixing Frequency
             bFFrequency = bugFixingFrequency(file, date, allBugReports)
-            print(bFFrequency)
+            # print(bFFrequency)
+
+            res_file.append(index)
+            res_file.append(bugid)
+            res_file.append(bFRecency)
+            res_file.append(bFFrequency)
+
+            res_relation.append(index)
+            res_relation.append(bugid)
+            res_relation.append(collaborativeFilterScore)
+            res_relation.append(classNameSimilarity)
+
+            list_file.append(res_file)
+            list_relation.append(res_relation)
+    df_file = pd.DataFrame(list_file,columns=['index','bugId','bugFixingRecency','bugFixingFrequency'])
+    df_relation = pd.DataFrame(list_relation,columns=['index','bugId','collaborativeFilterScore','classNameSimilarity'])
+
+    # merge
+    df_buggyFileFeatures = pd.read_csv(f"../data/splited_and_boosted_data/{dataset}/buggyFileFeatures/{i}.csv")
+    df_fileFeature_result = updateFeatures(df_buggyFileFeatures,df_file)
+    df_fileFeature_result.to_csv(f"../data/splited_and_boosted_data/{dataset}/buggyFileFeatures/{i}.csv",index=False)
+
+    df_relationFeatures = pd.read_csv(f"../data/splited_and_boosted_data/{dataset}/relationFeatures/{i}.csv")
+    df_relationFeature_result = updateFeatures(df_relationFeatures,df_relation)
+    df_relationFeature_result.to_csv(f"../data/splited_and_boosted_data/{dataset}/relationFeatures/{i}.csv",index=False)
 
             # 将计算得到的值存入 recList 的相应行
-            recList.at[index, 'collaborativeFilterScore'] = collaborativeFilterScore
-            recList.at[index, 'classNameSimilarity'] = classNameSimilarity
-            recList.at[index, 'bFRecency'] = bFRecency
-            recList.at[index, 'bFFrequency'] = bFFrequency
-
-    recList.to_csv("../data/test.csv")
-
-            # print(recList)
-            #
-            #
-            # # 数据应放在reclists中
-            # br.append(bug_id)
-            # recList['collab_filter'] = collaborativeFilterScore
-            # recList['classname_similarity'] = classNameSimilarity
-            # recList['bug_recency'] = bFRecency
-            # recList['bug_frequency']  = bFFrequency
-            # br.append(file)
-            # br.append(collaborativeFilterScore)
-            # br.append(classNameSimilarity)
-            # br.append(bFRecency)
-            # br.append(bFFrequency)
-            # all_br.append(br)
-
-def readRecList(dataset,i):
-    return pd.read_csv(f"../data/splited_and_boosted_data/{dataset}/{i}.csv")
+            # recList.at[index, 'collaborativeFilterScore'] = collaborativeFilterScore
+            # recList.at[index, 'classNameSimilarity'] = classNameSimilarity
+            # recList.at[index, 'bFRecency'] = bFRecency
+            # recList.at[index, 'bFFrequency'] = bFFrequency
 
 if __name__ == '__main__':
     configx = ConfigX()
     for dataset,file in configx.filepath_dict.items():
         if dataset not in ['zookeeper']:
             continue
-        for i in range(6):
+        print(f"=====four features: {dataset}=====")
+        for i in [0, 1, 2, 3, 4, 'otherTrulyBuggyFiles']:
+            if i != 'otherTrulyBuggyFiles':
+                continue
+            print(f"Current fold: {i}")
             getbugFeatures_four(dataset,readRecList(dataset,i))
-            exit()
-

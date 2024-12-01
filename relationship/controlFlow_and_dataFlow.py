@@ -13,10 +13,24 @@ def extract_data_flow_dependencies(csv_file, und_folder, output_file):
     
     # 用于保存结果
     results = []
+    df_head_flag = True
+    skip_key = True
     
     # 遍历每一行数据
     for index, row in df.iterrows():
+        file_index = row['index']
+
+        print(file_index)
+        # if file_index != '3_5143' and skip_key:
+        #     continue
+        # else:
+        #     skip_key = False
         commit = row['commit']
+
+        # 选择指定commit
+        if commit not in commits_set:
+            continue
+
         buggy_file = row['filePath']
         und_file_path = os.path.join(und_folder, f"{commit}.und")
 
@@ -76,7 +90,7 @@ def extract_data_flow_dependencies(csv_file, und_folder, output_file):
                     data_flow_deps.add(referencing_file.longname())
     #         print(func.longname())
 
-
+        results = [] # temp
         for dep_file in data_flow_deps:
             results.append({
                 'index': row['index'],
@@ -86,17 +100,25 @@ def extract_data_flow_dependencies(csv_file, und_folder, output_file):
                 'df_filePath': dep_file
             })
 
-        print(results)
-    
 
+
+        if df_head_flag:
+            output_df = pd.DataFrame(results)
+            output_df.to_csv(output_file, index=False, mode='a')
+            df_head_flag = False
+        else:
+            output_df = pd.DataFrame(results)
+            output_df.to_csv(output_file, index=False, mode='a', header=0)
+
+        # print(results)
         db.close()
         print(f"数据流依赖的文件: {data_flow_deps}")
         
     
-    # 将结果保存为CSV文件
-    output_df = pd.DataFrame(results)
-    output_df.to_csv(output_file, index=False)
-    print(f"Results saved to {output_file}")
+    # # 将结果保存为CSV文件
+    # output_df = pd.DataFrame(results)
+    # output_df.to_csv(output_file, index=False,mode='a')
+    # print(f"Results saved to {output_file}")
 
 
 
@@ -153,17 +175,21 @@ def extract_control_flow_dependencies(csv_file, und_folder, butterfly_folder, ou
     # 读取CSV文件
     df = pd.read_csv(csv_file)
 
-    head_flag = True
+    head_flag = True # 注意下个数据集修改
     error_index_flag = True
 
     for _, row in df.iterrows():
         index = row['index']
-        # if index!='4_390'and error_index_flag:
+        # if index!='2043'and error_index_flag:
         #     continue
         # else:
         #     error_index_flag = False
         print(index)
         commit = row['commit']
+        # 选择指定commit
+        if commit not in commits_set:
+            continue
+
         und_file_path = os.path.join(und_folder, f"{commit}.und")
         dot_file = os.path.join(butterfly_folder, f"{index}.dot")
 
@@ -213,24 +239,33 @@ def extract_control_flow_dependencies(csv_file, und_folder, butterfly_folder, ou
         else:
             output_df = pd.DataFrame(results)
             output_df.to_csv(output_file, index=False, mode='a',header=0)
-
+        udb.close()
     print(f"Results saved to {output_file}")
-    udb.close()
 
 
 
 
-# csv_file = r'D:\HitMore\HitMore-main\data\rec_lists\zookeeper_truly_buggy_file_result.csv'
-und_folder = r"D:\SciTools\bin\pc-win64\zookeeperDb"
-# data_flow_file = r'D:\HitMore\DataFlow\zookeeper_df_list.csv'
-#
-# # 数据流依赖文件列表提取
-# extract_data_flow_dependencies(csv_file, und_folder, data_flow_file)
 
+dataset = 'zookeeper'
+file_range = 'time'
 
-csv_file = r'D:\HitMore\HitMore-main\data\rec_lists\zookeeper_truly_buggy_file_result.csv'
-butterfly_folder = r'D:\HitMore\Butterfly\zookeeper'
-control_flow_file = r'D:\HitMore\ControlFlow\zookeeper_cf_list.csv'
+# hibernate
+path = f"D:\\SciTools\\bin\\pc-win64\\ordered_bugCmit_{dataset}_{file_range}"
+with open(path, 'r') as f:
+    commits = [line.strip().split(',') for line in f.readlines()]
+    df_commits = pd.DataFrame(commits, columns=['bugId', 'cmit', 'date'])
+commits_set = df_commits['cmit'].values.tolist()
+
+csv_file = f'D:\\HitMore\\HitMore-main\\data\\rec_lists\\orderedByTime\\{dataset}_truly_buggy_file_result_byTime.csv'
+und_folder = f"D:\\SciTools\\bin\\pc-win64\\{dataset}Db_{file_range}"
+data_flow_file = f'D:\\HitMore\\DataFlow_time\\{dataset}_df_list.csv'
+# #
+# # # 数据流依赖文件列表提取
+extract_data_flow_dependencies(csv_file, und_folder, data_flow_file)
+
+# csv_file = f'D:\\HitMore\\HitMore-main\\data\\rec_lists\\{dataset}_truly_buggy_file_result_byTime.csv'
+butterfly_folder = f'D:\\HitMore\\Butterfly_time\\{dataset}'
+control_flow_file = f'D:\\HitMore\\ControlFlow_time\\{dataset}_cf_list.csv'
 
 # 控制流依赖文件列表提取
 extract_control_flow_dependencies(csv_file, und_folder, butterfly_folder, control_flow_file)

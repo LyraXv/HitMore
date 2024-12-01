@@ -10,15 +10,34 @@ import pandas as pd
 
 
 def generate_butterfly_dot(csv_file, und_folder, output_folder):
+
+    path = f"D:\\SciTools\\bin\\pc-win64\\ordered_bugCmit_{dataset}_{file_range}"
+    with open(path,'r')as f:
+        commits = [line.strip().split(',') for line in f.readlines()]
+        df_commits = pd.DataFrame(commits,columns=['bugId','cmit','date'])
+    commits_set = df_commits['cmit'].values.tolist()
+
     # 读取CSV文件
     df = pd.read_csv(csv_file,encoding='utf-8')
-    
+
+    # for time(temp 后续删除
+    # dot_files = os.listdir(f"D:/HitMore/Butterfly_time/{dataset}")
+    # dots_set = {os.path.splitext(file)[0] for file in dot_files if file.endswith('.dot')}
+    # df_set = set(df['index'])
+    # print(len(df_set))
+
+    #
+    skip_key = True
     # 遍历每一行数据
     for index, row in df.iterrows():
-        # file_index = row['index']
-        # if file_index not in ['4_1701','4_1742','4_1747','4_1762','4_1763','4_1764','4_1765','4_1766','4_1768','4_1771','4_1772','4_1773','4_1803','4_1821','4_1822','4_1823','4_1824','4_1825','4_1827','4_1840','4_1842','4_1843','4_1845','4_1846']:
+        file_index = row['index']
+        # if str(file_index)!= '5806' and skip_key:
         #     continue
+        # else:
+        #     skip_key =False
         commit = row['commit']
+        if commit not in commits_set:
+            continue
         buggy_file = row['filePath']
         buggy_file = buggy_file.replace('/','\\')
         print(buggy_file)
@@ -63,9 +82,11 @@ def generate_butterfly_dot(csv_file, und_folder, output_folder):
         db.close()
 
 if __name__ == "__main__":
-    csv_file = r'D:\HitMore\HitMore-main\data\rec_lists\zookeeper_truly_buggy_file_result.csv'
-    und_folder = r"D:\SciTools\bin\pc-win64\zookeeperDb"
-    output_folder = f'D:\\HitMore\\Butterfly\\zookeeper'
+    dataset = 'zookeeper'
+    file_range = 'time'
+    csv_file = f'D:\\HitMore\\HitMore-main\\data\\rec_lists\\orderedByTime\\{dataset}_truly_buggy_file_result_byTime.csv'
+    und_folder = f"D:\\SciTools\\bin\\pc-win64\\{dataset}Db_{file_range}"
+    output_folder = f'D:\\HitMore\\Butterfly_time\\{dataset}'
 
     os.makedirs(output_folder, exist_ok=True)
 

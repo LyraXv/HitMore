@@ -2,13 +2,25 @@ import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
+from configx.configx import ConfigX
 from utils.utils import readBugIdByTime
 
 
-def five_cross_validation(dataset,preprocess=False):
+def five_cross_validation(dataset,configx,preprocess=False):
     # 读取CSV文件
-    data = pd.read_csv('../data/get_info/'+ dataset + '/recommendedList2.csv')
-    data = data.drop(columns=['SourceFile'])
+    if configx.rawDataType == 'Lyra':
+        data = pd.read_csv('../data/get_info/'+ dataset + '/recommendedList.csv')
+        data = data.drop(columns=['SourceFile'])
+        data = data.rename(columns={'BugId':'bugId','Rank_0':'rank_0','Score_0':'score_0','Rank_1':'rank_1','Score_1':'score_1','Rank_2':'rank_2'})
+    else:
+        data = pd.read_csv('../data/get_info/'+ dataset + '/mergedRecList.csv')
+        data = data.drop(columns=['path_0','path_1','path_2'])
+
+    # correlation_matrix = data.corr()
+    # print("Correlation matrix:\n", correlation_matrix)
+
+    if configx.RecModel in ['Adaboost']:
+        data = data.dropna()
 
     if preprocess:
         data = preprocessRecListsData(data)
@@ -20,7 +32,7 @@ def five_cross_validation(dataset,preprocess=False):
     folds = []
 
     # 按照BugId进行分组
-    grouped = data.groupby('BugId')
+    grouped = data.groupby('bugId')
 
     # 创建一个包含所有BugId的列表
     bug_ids = list(grouped.groups.keys())
@@ -36,8 +48,8 @@ def five_cross_validation(dataset,preprocess=False):
         # test_bug_ids.to_csv(f'../data/get_info/{dataset}/dataPartion/test_bugid_fold_{index + 1}.csv', index=False)
 
         # 获取训练集和测试集的数据
-        train_data = data[data['BugId'].isin(train_bug_ids)]
-        test_data = data[data['BugId'].isin(test_bug_ids)]
+        train_data = data[data['bugId'].isin(train_bug_ids)]
+        test_data = data[data['bugId'].isin(test_bug_ids)]
 
         # 将数据分为特征和目标
         train_x = train_data.iloc[:, :-1]  # 除最后一列之外的所有列
@@ -67,13 +79,22 @@ def five_cross_validation(dataset,preprocess=False):
     #     test_y.to_csv(f'test_y_fold_{i + 1}.csv', index=False)
 
 
-def data_splited_by_time(dataset,preprocess=False):
+def data_splited_by_time(dataset,configx,preprocess=False):
     bugId = readBugIdByTime(dataset)
     split_index = int(len(bugId)*0.8)
 
-    data = pd.read_csv('../data/get_info/' + dataset + '/recommendedList2.csv')
-    # print(bugId)
-    data = data.drop(columns=['SourceFile'])
+    if configx.rawDataType == 'Lyra':
+        data = pd.read_csv('../data/get_info/'+ dataset + '/recommendedList.csv')
+        data = data.drop(columns=['SourceFile'])
+        data = data.rename(columns={'BugId':'bugId','Rank_0':'rank_0','Score_0':'score_0','Rank_1':'rank_1','Score_1':'score_1','Rank_2':'rank_2'})
+    else:
+        data = pd.read_csv('../data/get_info/'+ dataset + '/mergedRecList.csv')
+        data = data.drop(columns=['path_0','path_1','path_2'])
+
+    if configx.RecModel in ['Adaboost']:
+        data = data.dropna()
+
+
     if preprocess:
         data = preprocessRecListsData(data)
 
@@ -83,8 +104,8 @@ def data_splited_by_time(dataset,preprocess=False):
     train_bug_ids = train_id.tolist()
     test_bug_ids = test_id.tolist()
 
-    train_data = data[data['BugId'].isin(train_bug_ids)]
-    test_data =  data[data['BugId'].isin(test_bug_ids)]
+    train_data = data[data['bugId'].isin(train_bug_ids)]
+    test_data =  data[data['bugId'].isin(test_bug_ids)]
 
     if train_data.empty:
         print("Train data is empty!")
@@ -106,12 +127,14 @@ def preprocessRecListsData(data):
     scaler = StandardScaler()
 
     # 对数据进行归一化
-    data[['Rank_0','Score_0', 'Rank_1','Score_1', 'Rank_2']] = scaler.fit_transform(data[['Rank_0','Score_0', 'Rank_1','Score_1', 'Rank_2']])
+    # data[['Rank_0','Score_0', 'Rank_1','Score_1', 'Rank_2']] = scaler.fit_transform(data[['Rank_0','Score_0', 'Rank_1','Score_1', 'Rank_2']])
+    data[['rank_0','score_0', 'rank_1','score_1', 'rank_2']] = scaler.fit_transform(data[['rank_0','score_0', 'rank_1','score_1', 'rank_2']])
 
     return data
 
 
 
 if __name__ == '__main__':
+    configx = ConfigX()
     five_cross_validation()
     # data_splited_by_time()

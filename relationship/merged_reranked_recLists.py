@@ -241,7 +241,7 @@ def readGroundTruth(bugId,df):
     truly_path_list = merge_three_predict_lists(df_ama,df_bugl,df_bli)
 
     df['label'] = 0
-    # 判断list是否是df['']的子串
+    # Determine if list is a substring of df[‘’].
     df['label'] = df['path'].apply(lambda x:1 if any(path in x for path in truly_path_list) else 0)
     # for path in truly_path_list:
     #     df['label'] = df['path'].apply(lambda x:1 if path in x else 0)
@@ -280,7 +280,6 @@ def origin_list_info(df,df_list,cf_list,co_list):
 def main():
     df_rec_lists = read_rec_lists()
     # final_lists = pd.DataFrame(columns=['bugId','fileIndex','filepath','df_occ','cf_occ','co_occ','call_num','rank_0','rank_1','rank_2'])
-    # 按bugId分组
     grouped = df_rec_lists.groupby('bugID')
     flag = True
     for bugId,group in grouped:
@@ -323,7 +322,7 @@ def main():
         df_res = df_res.groupby('path',as_index=False).first()
         df_res = df_res.sort_values(by="score",ascending=False)
         if len(df_res) > 3000:
-            df_to_save = df_res.head(3000)  # 取前 1000 行
+            df_to_save = df_res.head(3000)
         else:
             df_to_save = df_res  # 保留所有行
         df_to_save.to_csv(f"D:/HitMore/{ranked_res_filepath}/{dataset}/{bugId}.csv")

@@ -31,7 +31,7 @@ Step 02: features + ML
         hitMore_cuml_rf.py # input:all features # output:trulybuggyfilesSets
 
 Step 03: Optimize buggy files Lits
-    you nead download Understand(),
+    you nead download "Java Understand",and create understand db(script\createUdb.sh)
     1 Generate_butterfily.py
     2 controlFlow_and_dataFlow.py
     3 cooccurrence.py

@@ -4,31 +4,22 @@ import os
 os.add_dll_directory("D:\\Scitools\\bin\\pc-win64\\")   # Understand 安装的路径
 import understand
 import pandas as pd
-# import locale
-# locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-
 
 
 def generate_butterfly_dot(csv_file, und_folder, output_folder):
 
-    path = f"D:\\SciTools\\bin\\pc-win64\\ordered_bugCmit_{dataset}_{file_range}"
+    path = f"D:\\SciTools\\bin\\pc-win64\\ordered_bugCmit_{dataset}"
     with open(path,'r')as f:
         commits = [line.strip().split(',') for line in f.readlines()]
         df_commits = pd.DataFrame(commits,columns=['bugId','cmit','date'])
     commits_set = df_commits['cmit'].values.tolist()
 
-    # 读取CSV文件
+    # read csv file
     df = pd.read_csv(csv_file,encoding='utf-8')
-
-    # for time(temp 后续删除
-    # dot_files = os.listdir(f"D:/HitMore/Butterfly_time/{dataset}")
-    # dots_set = {os.path.splitext(file)[0] for file in dot_files if file.endswith('.dot')}
-    # df_set = set(df['index'])
-    # print(len(df_set))
 
     #
     skip_key = True
-    # 遍历每一行数据
+    # Iterate through each row of data
     for index, row in df.iterrows():
         file_index = row['index']
         # if str(file_index)!= '5806' and skip_key:
@@ -43,12 +34,12 @@ def generate_butterfly_dot(csv_file, und_folder, output_folder):
         print(buggy_file)
         und_file_path = os.path.join(und_folder, f"{commit}.und")
         print(und_file_path)
-        # 检查 .und 文件是否存在
+        # check for the existence of .und files
         if not os.path.exists(und_file_path):
             print(f"UND file not found: {und_file_path}")
             continue
 
-        # 打开 .und 文件
+        # open .und file
         try:
             db = understand.open(und_file_path)
             print("db",db)
@@ -56,7 +47,7 @@ def generate_butterfly_dot(csv_file, und_folder, output_folder):
             print(f"Failed to open UND file: {und_file_path}, Error: {e}")
             continue
         
-        # 获取目标文件实体
+        # Get the target file entity
         all_entities = db.ents("File")
         target_file_entity = None
         for ent in all_entities:
@@ -68,7 +59,7 @@ def generate_butterfly_dot(csv_file, und_folder, output_folder):
             print(f"Entity not found for file: {buggy_file} in commit: {commit}")
             continue
         
-        # 生成 Butterfly 图并保存为 .dot 文件
+        # generate a Butterfly diagram and save it as a .dot file
         output_dot_file = os.path.join(output_folder, f"{row['index']}.dot")
         print(type(target_file_entity))
         print("target_file_entity",target_file_entity)
@@ -83,14 +74,14 @@ def generate_butterfly_dot(csv_file, und_folder, output_folder):
 
 if __name__ == "__main__":
     dataset = 'zookeeper'
-    file_range = 'time'
-    csv_file = f'D:\\HitMore\\HitMore-main\\data\\rec_lists\\orderedByTime\\{dataset}_truly_buggy_file_result_byTime.csv'
-    und_folder = f"D:\\SciTools\\bin\\pc-win64\\{dataset}Db_{file_range}"
+    # file_range = 'time'
+    csv_file = f'D:\\HitMore\\HitMore-main\\data\\rec_lists\\orderedByTime\\{dataset}_truly_buggy_file_result.csv'
+    und_folder = f"D:\\SciTools\\bin\\pc-win64\\{dataset}Db"
     output_folder = f'D:\\HitMore\\Butterfly_time\\{dataset}'
 
     os.makedirs(output_folder, exist_ok=True)
 
-    # 生成 Butterfly 图
+    # generate a Butterfly diagram
     try:
         generate_butterfly_dot(csv_file, und_folder, output_folder)
     except Exception as e:
